@@ -1,11 +1,24 @@
 package othello;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+/**
+ * This class manages the drawing & initialization of the board, move
+ * validation, and calculates the winner.
+ * 
+ * @author wesmaxwell
+ * @since 2017-10-6
+ */
 public class Board {
 	private int BOARD_WIDTH = 8;
 	private int BOARD_HEIGHT = 8;
+
 	public enum CellState {
 		EMPTY, BLACK, WHITE
 	}
+
 	private CellState[][] board = new CellState[BOARD_WIDTH][BOARD_HEIGHT];
 
 	/**
@@ -83,7 +96,7 @@ public class Board {
 		board[4][4] = CellState.WHITE;
 
 	}
-	
+
 	/**
 	 * Determines if the current player has a move.
 	 * 
@@ -286,13 +299,11 @@ public class Board {
 		}
 		return valid;
 	}
-	
-	
-	
+
 	public CellState getCell(int i, int j) {
-		return board [i][j];
+		return board[i][j];
 	}
-	
+
 	/**
 	 * Calculates the score and prints winner message to screen.
 	 * 
@@ -307,14 +318,24 @@ public class Board {
 					ii++;
 		return ii;
 	}
+
+	/**
+	 * Automates a player (used for single and simulation mode.) Randomly selects
+	 * available move.
+	 * 
+	 * @author wesmaxwell
+	 * @since 2017-10-9
+	 * @param whosTurn
+	 * @return randomized available move
+	 */
 	public String automatePlay(String whosTurn) {
-		String retVal = null;
+		List<String> retVal = new ArrayList<String>();
 		for (int i = 1; i <= 8; i++)
 			for (int j = 1; j <= 8; j++)
 				if (isMoveValid(i + "," + j, true, whosTurn)) {
-					retVal = i + "," + j;
+					retVal.add(i + "," + j);
 				}
-		
-		return retVal;
+
+		return retVal.get(new Random().nextInt(retVal.size()));
 	}
 }

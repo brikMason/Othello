@@ -1,6 +1,12 @@
 package othello;
 
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.TreeMap;
 
 import othello.Board.CellState;
 
@@ -28,7 +34,7 @@ public class Othello {
 	}
 
 	private Board board;
-
+	private Scanner scanner = new Scanner(System.in);
 	private String whosTurn;
 	private int playerCannotMove = 0;
 
@@ -45,14 +51,20 @@ public class Othello {
 		board.init();
 	}
 
+	/**
+	 * Title display for Othello, allows user to select mode of play.
+	 * 
+	 * @author wesmaxwell
+	 * @since 2017-10-6
+	 * 
+	 */
+
 	public void title() {
 		String t = "Othello\n" + "\n" + "by Wes Maxwell\n" + "Fall 2017\n" + "\n" + "Options:\n"
 				+ "  1. 1-player: Human vs. AI\n" + "  2. 2-player: Human vs. Human\n" + "  3. Simulation: AI vs. AI\n";
 
 		System.out.print(t);
-		Scanner scanner = null;
 		try {
-			scanner = new Scanner(System.in);
 			while (true) {
 
 				String input = scanner.nextLine();
@@ -65,95 +77,147 @@ public class Othello {
 					playMode = PLAY_MODE.TWO_PLAYER;
 					break;
 				} else if ("3".equals(input)) {
-					System.out.println("-SIMULATION MODE-");
+					log(Boolean.TRUE, "-SIMULATION MODE-");
 					playMode = PLAY_MODE.SIMULATION;
 					System.out.print("Enter simulation count: ");
 					input = scanner.nextLine();
-					System.out.println(">>>>>>>" + input);
+					log(Boolean.TRUE, ">>>>>>>" + input);
 					try {
 						simulationCount = Integer.parseInt(input);
 
 					} catch (Exception e) {
-						System.out.println("Input Error");
+						log(Boolean.TRUE, "Input Error");
 						continue;
 					}
 					break;
 				} else {
-					System.out.println("Invalid input. Please enter 1, 2, or 3.");
+					log(Boolean.TRUE, "Invalid input. Please enter 1, 2, or 3.");
 				}
 
 			}
 		} catch (Exception e) {
 
 		} finally {
-			scanner.close();
+			// scanner.close();
 		}
 	}
+
+	/**
+	 * Main handler for printing scores and analyzing results.
+	 * 
+	 * @author wesmaxwell
+	 * @since 2017-10-6
+	 * 
+	 */
 
 	public void play() {
 		if (playMode == PLAY_MODE.SINGLE_PLAYER || playMode == PLAY_MODE.TWO_PLAYER) {
 			go();
 		} else {
+			ArrayList<Integer> blackScores = new ArrayList<Integer>();
+			ArrayList<Integer> whiteScores = new ArrayList<Integer>();
+
 			while (simulationCount > 0) {
 				simulationCount--;
+				log(Boolean.TRUE, "Simulations left: " + simulationCount);
+				log(Boolean.TRUE, "***************************************");
 				go();
+				blackScores.add(board.getScore(CellState.BLACK));
+				whiteScores.add(board.getScore(CellState.WHITE));
+				board.init();
 			}
+
+			analyze(blackScores, whiteScores);
 		}
 	}
 
+	// This method runs analysis on the spread of the scores.
+	private void analyze(ArrayList<Integer> blackScores, ArrayList<Integer> whiteScores) {
+
+		Map<Integer, Integer> data = new TreeMap<Integer, Integer>();
+		for (int i = 0; i < blackScores.size(); i++) {
+			int diff = blackScores.get(i) - whiteScores.get(i);
+			if (data.containsKey(diff)) {
+				data.put(diff, data.get(diff) + 1);
+			} else {
+				data.put(diff, 1);
+			}
+		}
+		PrintWriter writer = null;
+		try {
+			writer = new PrintWriter("Othello_Analysis.csv", "UTF-8");
+			int total = 0;
+			int count = 0;
+			log(Boolean.TRUE, "Spread - Occurances");
+			for (Integer key : data.keySet()) {
+				total += data.get(key);
+				count += key * data.get(key);
+
+				log(Boolean.TRUE, key + ", " + data.get(key));
+				writer.println(key + "," + data.get(key));
+
+			}
+			log(Boolean.TRUE, "AVG " + (double) ((double) total / (double) count));
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} finally {
+			if (null != writer) {
+				writer.flush();
+				writer.close();
+			}
+		}
+
+	}
+
+	/**
+	 * This method draws the board and accepts and validates user input.
+	 * 
+	 * @author wesmaxwell
+	 * @since 2017-10-12
+	 */
 	public void go() {
-		Scanner scanner = null;
 		whosTurn = "Black";
 		try {
-			scanner = new Scanner(System.in);
 
 			while (true) {
-				// board.drawBoard();
-
-				if (playMode == PLAY_MODE.SIMULATION) {
-					System.out.println("Simulations left: " + simulationCount);
-					System.out.println("***************************************");
-				} else {
-					board.drawBoard();
-				}
 
 				if (!board.playerHasMove(whosTurn)) {
 					playerCannotMove++;
 
 					if (playerCannotMove > 1) {
-						System.out.println("NO PLAYER CAN MOVE - QUITTING");
+						log(Boolean.TRUE, "NO PLAYER CAN MOVE - QUITTING");
 						break;
 					} else {
-						System.out.println(whosTurn + " has no valid moves they must PASS.");
+						log(Boolean.FALSE, whosTurn + " has no valid moves they must PASS.");
 					}
 				} else {
 					playerCannotMove = 0;
 
-					System.out.print(whosTurn + " Enter your move (row, column): ");
 					String input = null;
 					if (playMode == PLAY_MODE.TWO_PLAYER) {
+						board.drawBoard();
+						System.out.print(whosTurn + " Enter your move (row, column): ");
 						input = scanner.nextLine();
 					} else if (playMode == PLAY_MODE.SINGLE_PLAYER && "Black".equals(whosTurn)) {
+						board.drawBoard();
+						System.out.print(whosTurn + " Enter your move (row, column): ");
 						input = scanner.nextLine();
 					} else {
-
-						// if(playMode == PLAY_MODE.SIMULATION)
-						// simulationCount --;
-
 						input = board.automatePlay(whosTurn);
-						System.out.println(input);
 					}
 
-					if ("QUIT".equals(input))
+					if ("QUIT".equals(input.toUpperCase()))
 						break;
 
 					if (!isDataValid(input)) {
-						System.out.println("Input is invald. " + input);
+						log(Boolean.TRUE, "Input is invald. " + input);
 						continue;
 					}
 
 					if (!board.isMoveValid(input, false, whosTurn)) {
-						System.out.println("Move is illegal.");
+						log(Boolean.TRUE, "Move is illegal.");
 						continue;
 					}
 				}
@@ -168,6 +232,7 @@ public class Othello {
 		} finally {
 			if (scanner != null)
 				scanner.close();
+			scanner = null;
 		}
 
 	}
@@ -217,21 +282,31 @@ public class Othello {
 	private void printScore() {
 		int black = board.getScore(CellState.BLACK);
 		int white = board.getScore(CellState.WHITE);
-		System.out.println("=======================================");
-		System.out.println("==               SCORE               ==");
-		System.out.println("=======================================");
-		System.out.println("BLACK: " + black);
-		System.out.println("WHITE: " + white);
+		log(Boolean.TRUE, "=======================================");
+		log(Boolean.TRUE, "==               SCORE               ==");
+		log(Boolean.TRUE, "=======================================");
+		log(Boolean.TRUE, "BLACK: " + black);
+		log(Boolean.TRUE, "WHITE: " + white);
 
 		if (black > white) {
-			System.out.println("\nCongratulations BLACK!");
+			log(Boolean.TRUE, "\nCongratulations BLACK!");
 		} else if (black < white) {
-			System.out.println("\nCongratulations WHITE!");
+			log(Boolean.TRUE, "\nCongratulations WHITE!");
 		} else {
-			System.out.println("\nWOW!!! A tie!");
+			log(Boolean.TRUE, "\nWOW!!! A tie!");
 		}
 
 		return;
 	}
 
+	// This method determines if the board should be printed or hidden.
+	private void log(Boolean pnt, String msg) {
+		if (playMode == PLAY_MODE.SIMULATION) {
+			if (pnt) {
+				System.out.println(msg);
+			}
+		} else {
+			System.out.println(msg);
+		}
+	}
 }
