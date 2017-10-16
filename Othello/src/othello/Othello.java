@@ -59,7 +59,7 @@ public class Othello {
 	 * 
 	 */
 
-	public void title() {
+	private void title() {
 		String t = "Othello\n" + "\n" + "by Wes Maxwell\n" + "Fall 2017\n" + "\n" + "Options:\n"
 				+ "  1. 1-player: Human vs. AI\n" + "  2. 2-player: Human vs. Human\n" + "  3. Simulation: AI vs. AI\n";
 
@@ -110,7 +110,7 @@ public class Othello {
 	 * 
 	 */
 
-	public void play() {
+	private void play() {
 		if (playMode == PLAY_MODE.SINGLE_PLAYER || playMode == PLAY_MODE.TWO_PLAYER) {
 			go();
 		} else {
@@ -135,16 +135,29 @@ public class Othello {
 	private void analyze(ArrayList<Integer> blackScores, ArrayList<Integer> whiteScores) {
 
 		Map<Integer, Integer> data = new TreeMap<Integer, Integer>();
-		for (int i = 0; i < blackScores.size(); i++) {
-			int diff = blackScores.get(i) - whiteScores.get(i);
-			if (data.containsKey(diff)) {
-				data.put(diff, data.get(diff) + 1);
-			} else {
-				data.put(diff, 1);
-			}
-		}
 		PrintWriter writer = null;
 		try {
+			// Used to calculate standard deviation.
+			writer = new PrintWriter("Othello_Data.csv", "UTF-8");
+			for (int i = 0; i < blackScores.size(); i++) {
+				int diff = blackScores.get(i) - whiteScores.get(i);
+				writer.println(diff);
+				if (data.containsKey(diff)) {
+					data.put(diff, data.get(diff) + 1);
+				} else {
+					data.put(diff, 1);
+				}
+			}
+		} catch (FileNotFoundException | UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} finally {
+			if (null != writer) {
+				writer.flush();
+				writer.close();
+			}
+		}
+		try {
+			// Used to calculate the spread vs. occurrences graph.
 			writer = new PrintWriter("Othello_Analysis.csv", "UTF-8");
 			int total = 0;
 			int count = 0;
@@ -177,7 +190,7 @@ public class Othello {
 	 * @author wesmaxwell
 	 * @since 2017-10-12
 	 */
-	public void go() {
+	private void go() {
 		whosTurn = "Black";
 		try {
 
